@@ -36,7 +36,7 @@ def show_image(scan, idx, vmin=1e2, vmax=1e7, cen_pix=False, ywidth=40, **kwargs
                 [idx], marker='.', color='r', ms=4)
 
 
-def animate_scan(scan, **kwargs):
+def animate_scan(scan, col, vmin=1e7, vmax=1e2, **kwargs):
     ''' Creates a scan animation with a slider in a Jupyter notebook using
     ipywidgets
 
@@ -49,7 +49,7 @@ def animate_scan(scan, **kwargs):
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(1, 1, 1)
 
-    im = ax.imshow(scan['crop'][0], norm=LogNorm(vmax=1e7, vmin=1e2), **kwargs)
+    im = ax.imshow(scan['crop'][0], norm=LogNorm(vmax=vmax, vmin=vmin), **kwargs)
 
     # Plot the center pixel
     x, = ax.plot(scan['px_x'][0], scan['px_y'][0],
@@ -59,24 +59,23 @@ def animate_scan(scan, **kwargs):
     ax.set_ylim(bottom=y_median - 50, top=y_median + 50)
 
     # Set title, 'l=, cx, cy = '
-    ax.set_title(str(scan['l'][0])[0:5] + ' cx = ' +
+    ax.set_title(str(scan[col][0])[0:5] + ' cx = ' +
                  str(scan['px_x'][0]) + ' cy = ' + str(scan['px_y'][0]))
 
     def update(l, **kwargs):
         # Need to use an index from scan in order to find our specific l value
-        idx = get_idx(scan, 'l', l)
+        idx = get_idx(scan, col, l)
         # Update plotted data
         im.set_data(scan['crop'][idx])
-        im.set_norm(norm=LogNorm(vmax=1e7, vmin=1e2))
+        im.set_norm(norm=LogNorm(vmax=vmax, vmin=vmin))
 
         x.set_data(scan['px_x'][idx], scan['px_y'][idx])
 
-        ax.set_title('l = ' + str(scan['l'][idx])[0:5] + ' cx = ' +
-                     str(scan['px_x'][idx]) + ' cy = ' + str(scan['px_y'][idx]))  # noqa
+        ax.set_title(col + ' = ' + str(scan[col][idx])[0:5] + ' cx = ' + str(scan['px_x'][idx]) + ' cy = ' + str(scan['px_y'][idx]))  # noqa
 
         fig.canvas.draw()
 
         return l
 
-    interact(update, l=widgets.FloatSlider(value=1, min=scan['l'].min(axis=0),
-                                           max=scan['l'].max(axis=0), step=0.005, continuous_update=False))
+    interact(update, l=widgets.FloatSlider(value=1, min=scan[col].min(axis=0),
+                                           max=scan[col].max(axis=0), step=0.005, continuous_update=False))
